@@ -18,6 +18,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"math"
 	"reflect"
 
 	"google.golang.org/grpc"
@@ -87,6 +88,12 @@ func (p *provider) Init(ctx servicehub.Context) error {
 			grpc.WithStreamInterceptor(grpccontext.StreamClientInterceptor()),
 		)
 	}
+
+	opts = append(opts, grpc.WithDefaultCallOptions(
+		grpc.MaxCallRecvMsgSize(math.MaxInt64),
+		grpc.MaxCallSendMsgSize(math.MaxInt64),
+	))
+
 	p.opts = opts
 	if p.Cfg.Singleton {
 		opts = nil
