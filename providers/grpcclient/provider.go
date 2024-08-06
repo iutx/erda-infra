@@ -17,6 +17,7 @@ package grpcclient
 import (
 	"context"
 	"fmt"
+	"math"
 	"reflect"
 
 	"github.com/erda-project/erda-infra/base/logs"
@@ -45,9 +46,11 @@ type config struct {
 		ServerNameOverride string `file:"cert_file" desc:"the server name used to verify the hostname returned by the TLS handshake"`
 		CAFile             string `file:"ca_file" desc:"the file containing the CA root cert file"`
 	} `file:"tls"`
-	Singleton   bool `file:"singleton" default:"true" desc:"one client instance"`
-	Block       bool `file:"block" default:"true" desc:"block until the connection is up"`
-	TraceEnable bool `file:"trace_enable" default:"true"`
+	Singleton          bool `file:"singleton" default:"true" desc:"one client instance"`
+	Block              bool `file:"block" default:"true" desc:"block until the connection is up"`
+	TraceEnable        bool `file:"trace_enable" default:"true"`
+	MaxCallRecvMsgSize int
+	MaxCallSendMsgSize int
 }
 
 type provider struct {
@@ -74,6 +77,20 @@ func (p *provider) Init(ctx servicehub.Context) error {
 			grpc.WithStreamInterceptor(grpccontext.StreamClientInterceptor()),
 		)
 	}
+
+	// call options
+	maxRecvMsgSize, maxSendMsgSize := math.MaxInt64, math.MaxInt64
+	if p.Cfg.MaxCallRecvMsgSize > 0 {
+		maxRecvMsgSize = p.Cfg.MaxCallRecvMsgSize
+	}
+	if p.Cfg.MaxCallSendMsgSize > 0 {
+		maxSendMsgSize = p.Cfg.MaxCallSendMsgSize
+	}
+	opts = append(opts, grpc.WithDefaultCallOptions(
+		grpc.MaxCallRecvMsgSize(maxRecvMsgSize),
+		grpc.MaxCallSendMsgSize(maxSendMsgSize),
+	))
+
 	p.opts = opts
 	if p.Cfg.Singleton {
 		opts = nil
