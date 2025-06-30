@@ -23,9 +23,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/erda-project/erda-infra/base/logs"
 	"github.com/olivere/elastic"
 	"github.com/recallsong/go-utils/reflectx"
+
+	"github.com/erda-project/erda-infra/base/logs"
 )
 
 // Document .
@@ -57,7 +58,7 @@ func (w *batchWriter) WriteN(data ...interface{}) (int, error) {
 	requests := make([]elastic.BulkableRequest, len(data), len(data))
 	for i, item := range data {
 		if doc, ok := item.(*Document); ok {
-			req := elastic.NewBulkIndexRequest().Index(doc.Index).Type(w.typ).Doc(doc.Data)
+			req := elastic.NewBulkIndexRequest().Index(doc.Index).Doc(doc.Data)
 			if len(doc.ID) > 0 {
 				req.Id(doc.ID)
 			}
